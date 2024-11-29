@@ -9,6 +9,7 @@ import collections.abc
 import logging
 import sys
 from typing import TYPE_CHECKING, Any, Tuple, Union, List, Iterable, Optional, overload
+from time import time
 
 if sys.version_info >= (3, 8):
     from typing import Protocol
@@ -137,6 +138,7 @@ class Subscription:
         self.parameters: ua.CreateSubscriptionParameters = params  # move to data class
         self._monitored_items = {}
         self.subscription_id: Optional[int] = None
+        self.datachange_heartbeat = 0
 
     async def init(self) -> ua.CreateSubscriptionResult:
         response = await self.server.create_subscription(self.parameters, callback=self.publish_callback)
@@ -157,6 +159,7 @@ class Subscription:
         """
         Handle `PublishResult` callback.
         """
+        self.datachange_heartbeat = time()
         self.logger.info("Publish callback called with result: %s", publish_result)
         if publish_result.NotificationMessage.NotificationData is not None:
             for notif in publish_result.NotificationMessage.NotificationData:
